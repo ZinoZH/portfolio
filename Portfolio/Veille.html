@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Veille Informatique - Zineddine Hadjab</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <h1 class="site-title">🔍 Veille Informatique</h1>
+        <nav class="dropdown">
+            <button class="dropbtn">🔍 Veille Informatique ≡</button>
+            <ul class="dropdown-content">
+                <li><a href="index.html">🏠 Accueil</a></li>
+                <li><a href="CV.html">📜 Mon CV</a></li>
+                <li><a href="Documentations.html">📚 Documentations</a></li>
+                <li><a href="Certifications.html">🎓 Certifications</a></li>
+                <li><a href="Projets.html">💡 Mes Projets</a></li>
+                <li><a href="Stages.html">💼 Mes Stages</a></li>
+                <li><a href="Veille.html">🔍 Veille Informatique</a></li>
+                <li><a href="Contact.html">📩 Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <div class="container">
+        <section>
+            <h1>🛡️ Veille Informatique basée sur la cybersécurité et l'IA</h1>
+            <p>Voici les dernières actualités sur l'IA et la cybersécurité mises à jour en temps réel :</p>
+
+            <div class="projects-container" id="rss-feed">
+                <p>Chargement des articles...</p>
+            </div>
+        </section>
+    </div>
+
+    <footer>
+        <p class="footer-b">&copy; 2025 Zineddine Hadjab. Tous droits réservés.</p>
+    </footer>
+
+    <!-- SCRIPT POUR CHARGER LE FLUX RSS -->
+    <script>
+    async function chargerRSS() {
+        const rssFeedContainer = document.getElementById('rss-feed');
+        const fluxRSS = [
+            'https://www.zdnet.fr/feeds/rss/actualites/ia/',
+            'https://cyberguerre.numerama.com/feed',
+        ];
+
+        rssFeedContainer.innerHTML = ""; // On vide le contenu existant
+
+        for (const url of fluxRSS) {
+            try {
+                const response = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`);
+                const data = await response.json();
+
+                if (data.status === 'ok') {
+                    data.items.slice(0, 3).forEach(article => {
+                        const articleElement = document.createElement('div');
+                        articleElement.className = "project-card";
+
+                        // Nettoyage du texte et suppression des balises HTML
+                        let description = article.description.replace(/(<([^>]+)>)/gi, "").trim();
+
+                        // Suppression des phrases inutiles
+                        const phrasesInutiles = [
+                            "Le ZDNET Morning", "Retrouvez toutes les actualités", "Ne manquez pas", 
+                            "Chaque matin à 9h00", "Pour en savoir plus", "Les experts analysent",
+                            "Découvrez les nouveautés", "L'essentiel de l'actu tech"
+                        ];
+                        phrasesInutiles.forEach(phrase => {
+                            if (description.startsWith(phrase)) {
+                                description = description.replace(phrase, "").trim();
+                            }
+                        });
+
+                        // Reformulation de la description
+                        let phrases = description.split(". ");
+                        let descriptionReformulee = (phrases.length > 1) 
+                            ? `${phrases[0]}. ${phrases[1]}.` 
+                            : description;
+
+                        // Récupération de l'image
+                        let imageUrl = "default-image.jpg"; // Image par défaut
+
+                        if (article.enclosure && article.enclosure.link && article.enclosure.link.includes("http")) {
+                            imageUrl = article.enclosure.link; // Image depuis l'article
+                        } else if (article.content) {
+                            let imgMatch = article.content.match(/<img[^>]+src="([^">]+)"/);
+                            if (imgMatch) {
+                                imageUrl = imgMatch[1]; // Extraction de la première image trouvée
+                            }
+                        }
+
+                        // Vérification spécifique pour Numerama
+                        if (imageUrl === "default-image.jpg" && article.link.includes("numerama.com")) {
+                            console.log("⚠️ Aucun image trouvée dans le RSS pour Numerama : " + article.link);
+                        }
+
+                        // Insertion du contenu dans le HTML
+                        articleElement.innerHTML = `
+                            <div class="project-img">
+                                <a href="${article.link}" target="_blank">
+                                    <img src="${imageUrl}" alt="Illustration de l'article" onerror="this.onerror=null;this.src='default-image.jpg';">
+                                </a>
+                            </div>
+                            <div class="project-content">
+                                <h2>${article.title}</h2>
+                                <p>${descriptionReformulee}</p>
+                                <div class="btn-group">
+                                    <a href="${article.link}" target="_blank" class="btn btn-preview">🔗 Lire l'article complet</a>
+                                </div>
+                            </div>
+                        `;
+                        rssFeedContainer.appendChild(articleElement);
+                    });
+                }
+            } catch (error) {
+                console.error("❌ Erreur lors du chargement du flux RSS :", error);
+            }
+        }
+    }
+
+    document.addEventListener("DOMContentLoaded", chargerRSS);
+</script>
+
